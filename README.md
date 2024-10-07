@@ -1,6 +1,6 @@
 # instagram-dms
 
-Distraction-free way to use Instagram DMs on Desktop.
+Distraction-free way to view Instagram DMs on Desktop.
 
 ## Background
 
