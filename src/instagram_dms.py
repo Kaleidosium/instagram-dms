@@ -114,7 +114,6 @@ def load_url(window):
     window.load_url("https://www.instagram.com/direct/inbox/")
 
     # Give some time for the page to load before starting the URL checking loop
-
     time.sleep(5)
 
     while True:
@@ -138,7 +137,6 @@ if __name__ == "__main__":
     window.events.loaded += on_loaded
 
     # We need to explicitly set a http port to persist cookies between sessions
-
     webview.start(
         func=load_url,
         args=window,
