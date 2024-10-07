@@ -3,113 +3,101 @@ import time
 import threading
 
 def inject_js(window):
-    result = window.evaluate_js(
+    window.evaluate_js(
         r"""
-        const DM_URL = 'https://www.instagram.com/direct/inbox/';
+        try {
+            const DM_URL = 'https://www.instagram.com/direct/inbox/';
 
-        function isAllowedUrl(url) {
-            // Allow all external links but restrict Instagram navigation to DMs
-            const isDMSection = url.startsWith('https://www.instagram.com/direct/');
-            const isInstagram = url.startsWith('https://www.instagram.com/');
-            return isDMSection || !isInstagram;  // Allow external or DM-related Instagram links
-        }
-
-        function forceRedirectToDMs() {
-            if (!isAllowedUrl(window.location.href)) {
-                window.location.href = DM_URL;
-                return true;
-            }
-            return false;
-        }
-
-        function applyCustomStyles() {
-            const htmlElement = document.querySelector('html');
-            if (htmlElement) { 
-                htmlElement.style.msOverflowStyle = 'none';
-                htmlElement.style.scrollbarWidth = 'none';
+            function isAllowedUrl(url) {
+                // Allow all external links but restrict Instagram navigation to DMs
+                const isDMSection = url.startsWith('https://www.instagram.com/direct/');
+                const isInstagram = url.startsWith('https://www.instagram.com/');
+                return isDMSection || !isInstagram;  // Allow external or DM-related Instagram links
             }
 
-            if (!document.getElementById('hide-scrollbar-y-style')) {
-                const style = document.createElement('style');
-                style.id = 'hide-scrollbar-y-style';
-                style.textContent = 'html::-webkit-scrollbar { display: none !important; }';
-                document.head.appendChild(style);
-            }
-
-            const weirdBottomMargin = document.querySelector('div.html-div > div.x9f619.x1n2onr6.x1ja2u2z > div > div > div.x78zum5.xdt5ytf.x1t2pt76.x1n2onr6.x1ja2u2z.x10cihs4 > div.x9f619.xvbhtw8.x78zum5.x168nmei.x13lgxp2.x5pf9jr.xo71vjh.x1uhb9sk.x1plvlek.xryxfnj.x1c4vz4f.x2lah0s.xdt5ytf.xqjyukv.x1qjc9v5.x1oa3qoh.x1qughib > div.x1gryazu.xh8yej3.x10o80wk.x14k21rp.x1v4esvl.x8vgawa');
-            if (weirdBottomMargin) { weirdBottomMargin.style.margin = '0'; }
-
-            const frameWidthAndHeight = document.querySelector('div.html-div > div.x9f619.x1n2onr6.x1ja2u2z > div > div > div.x78zum5.xdt5ytf.x1t2pt76.x1n2onr6.x1ja2u2z.x10cihs4 > div.x9f619.xvbhtw8.x78zum5.x168nmei.x13lgxp2.x5pf9jr.xo71vjh.x1uhb9sk.x1plvlek.xryxfnj.x1c4vz4f.x2lah0s.xdt5ytf.xqjyukv.x1qjc9v5.x1oa3qoh.x1qughib > div.x1gryazu.xh8yej3.x10o80wk.x14k21rp.x1v4esvl.x8vgawa > section > main > section > div > div > div');
-            if (frameWidthAndHeight) { frameWidthAndHeight.style.height = '100%'; frameWidthAndHeight.style.width = '100%'; }
-
-            const charmsbar = document.querySelector('div.html-div > div.x9f619.x1n2onr6.x1ja2u2z > div > div > div.x78zum5.xdt5ytf.x1t2pt76.x1n2onr6.x1ja2u2z.x10cihs4 > div.x9f619.xvbhtw8.x78zum5.x168nmei.x13lgxp2.x5pf9jr.xo71vjh.x1uhb9sk.x1plvlek.xryxfnj.x1c4vz4f.x2lah0s.xdt5ytf.xqjyukv.x1qjc9v5.x1oa3qoh.x1qughib > div.x9f619.xjbqb8w.x78zum5.x168nmei.x13lgxp2.x5pf9jr.xo71vjh.xixxii4.x1ey2m1c.x1plvlek.xryxfnj.x1c4vz4f.x2lah0s.xdt5ytf.xqjyukv.x1qjc9v5.x1oa3qoh.x1nhvcw1.xg7h5cd.xh8yej3.xhtitgo.x6w1myc.x1jeouym');
-            if (charmsbar) { charmsbar.style.display = 'none'; }
-        }
-
-        function removeNonDMElements() {
-            const navBar = document.querySelector('nav');
-            if (navBar) navBar.remove();
-
-            document.querySelectorAll('[href*="explore"], [aria-label*="explore"], [data-testid*="explore"]').forEach(el => el.remove());
-
-            document.querySelectorAll('[href*="profile"], [aria-label*="profile"], [data-testid*="profile"], [href*="search"], [aria-label*="search"], [data-testid*="search"]').forEach(el => el.remove());
-        }
-
-        function enforceStrictControl() {
-            if (forceRedirectToDMs()) return;
-            applyCustomStyles();
-            removeNonDMElements();
-        }
-        enforceStrictControl();
-
-        const observer = new MutationObserver((mutations) => {
-            enforceStrictControl();
-        });
-
-        observer.observe(document.body, {
-            childList: true,
-            subtree: true
-        });
-
-        window.addEventListener('click', function(e) {
-            const anchorTag = e.target.tagName === 'A' ? e.target : e.target.closest('a');
-            if (anchorTag) {
-                const href = anchorTag.href;
-                if (!isAllowedUrl(href)) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    forceRedirectToDMs();  // Redirect Instagram URLs that are not DMs
-                } else if (!href.startsWith('https://www.instagram.com/')) {
-                    // Allow external links
-                    e.preventDefault();
-                    e.stopPropagation();
-                    window.open(href, '_blank'); // Open external links in new tab
+            function forceRedirectToDMs() {
+                if (!isAllowedUrl(window.location.href)) {
+                    window.location.href = DM_URL;
                 }
             }
-        }, true);
 
-        ['pushState', 'replaceState'].forEach(func => {
-            const original = history[func];
-            history[func] = function () {
-                const result = original.apply(this, arguments);
+            function applyCustomStyles() {
+                try {
+                    const htmlElement = document.querySelector('html');
+                    if (htmlElement) { 
+                        htmlElement.style.msOverflowStyle = 'none';
+                        htmlElement.style.scrollbarWidth = 'none';
+                    }
+
+                    if (!document.getElementById('hide-scrollbar-y-style')) {
+                        const style = document.createElement('style');
+                        style.id = 'hide-scrollbar-y-style';
+                        style.textContent = 'html::-webkit-scrollbar { display: none !important; }';
+                        document.head.appendChild(style);
+                    }
+
+                    const weirdBottomMargin = document.querySelector('div.html-div > div.x9f619.x1n2onr6.x1ja2u2z > div > div > div.x78zum5.xdt5ytf.x1t2pt76.x1n2onr6.x1ja2u2z.x10cihs4 > div.x9f619.xvbhtw8.x78zum5.x168nmei.x13lgxp2.x5pf9jr.xo71vjh.x1uhb9sk.x1plvlek.xryxfnj.x1c4vz4f.x2lah0s.xdt5ytf.xqjyukv.x1qjc9v5.x1oa3qoh.x1qughib > div.x1gryazu.xh8yej3.x10o80wk.x14k21rp.x1v4esvl.x8vgawa');
+                    if (weirdBottomMargin) { weirdBottomMargin.style.margin = '0'; }
+
+                    const frameWidthAndHeight = document.querySelector('div.html-div > div.x9f619.x1n2onr6.x1ja2u2z > div > div > div.x78zum5.xdt5ytf.x1t2pt76.x1n2onr6.x1ja2u2z.x10cihs4 > div.x9f619.xvbhtw8.x78zum5.x168nmei.x13lgxp2.x5pf9jr.xo71vjh.x1uhb9sk.x1plvlek.xryxfnj.x1c4vz4f.x2lah0s.xdt5ytf.xqjyukv.x1qjc9v5.x1oa3qoh.x1qughib > div.x1gryazu.xh8yej3.x10o80wk.x14k21rp.x1v4esvl.x8vgawa > section > main > section > div > div > div');
+                    if (frameWidthAndHeight) { frameWidthAndHeight.style.height = '100%'; frameWidthAndHeight.style.width = '100%'; }
+
+                    const charmsbar = document.querySelector('div.html-div > div.x9f619.x1n2onr6.x1ja2u2z > div > div > div.x78zum5.xdt5ytf.x1t2pt76.x1n2onr6.x1ja2u2z.x10cihs4 > div.x9f619.xvbhtw8.x78zum5.x168nmei.x13lgxp2.x5pf9jr.xo71vjh.x1uhb9sk.x1plvlek.xryxfnj.x1c4vz4f.x2lah0s.xdt5ytf.xqjyukv.x1qjc9v5.x1oa3qoh.x1qughib > div.x9f619.xjbqb8w.x78zum5.x168nmei.x13lgxp2.x5pf9jr.xo71vjh.xixxii4.x1ey2m1c.x1plvlek.xryxfnj.x1c4vz4f.x2lah0s.xdt5ytf.xqjyukv.x1qjc9v5.x1oa3qoh.x1nhvcw1.xg7h5cd.xh8yej3.xhtitgo.x6w1myc.x1jeouym');
+                    if (charmsbar) { charmsbar.style.display = 'none'; }
+                } catch (error) {
+                    console.error('Error applying custom styles:', error);
+                }
+            }
+
+            function removeNonDMElements() {
+                try {
+                    const navBar = document.querySelector('nav');
+                    if (navBar) navBar.remove();
+                    
+                    document.querySelectorAll('[href*="explore"], [aria-label*="explore"]').forEach(el => el.remove());
+                } catch (error) {
+                    console.error('Error removing elements:', error);
+                }
+            }
+
+            function enforceStrictControl() {
+                forceRedirectToDMs();
+                applyCustomStyles();
+                removeNonDMElements();
+            }
+
+            enforceStrictControl();
+
+            const observer = new MutationObserver(() => {
                 enforceStrictControl();
-                return result;
-            };
-        });
+            });
 
-        window.addEventListener('popstate', function() {
-            enforceStrictControl();
-        });
+            observer.observe(document.body, {
+                childList: true,
+                subtree: true,
+                attributes: true,
+                characterData: true
+            });
 
-        window.addEventListener('hashchange', function(e) {
-            e.preventDefault();
-            enforceStrictControl();
-        });
-
-        window.checkDMContent = function() {
-            const dmContent = document.querySelector('div[aria-label="Direct messaging"]');
-            return !!dmContent;
-        };
+            window.addEventListener('click', function (e) {
+                const anchorTag = e.target.tagName === 'A' ? e.target : e.target.closest('a');
+                if (anchorTag) {
+                    const href = anchorTag.href;
+                    if (isAllowedUrl(href)) {
+                        // Allow external links
+                        e.preventDefault();
+                        e.stopPropagation();
+                        window.open(href, '_blank'); // Open external links in new tab
+                    } else {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        forceRedirectToDMs(); // Redirect Instagram URLs that are not DMs
+                    }
+                }
+            }, true);
+        } catch (error) {
+            console.error('Error in main script: ', error);
+        }
         """
     )
 
