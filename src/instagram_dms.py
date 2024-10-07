@@ -3,7 +3,7 @@ import time
 import threading
 
 def inject_js(window):
-    window.evaluate_js(
+    result = window.evaluate_js(
         r"""
         const DM_URL = 'https://www.instagram.com/direct/inbox/';
 
@@ -60,7 +60,6 @@ def inject_js(window):
             applyCustomStyles();
             removeNonDMElements();
         }
-
         enforceStrictControl();
 
         const observer = new MutationObserver((mutations) => {
@@ -69,9 +68,7 @@ def inject_js(window):
 
         observer.observe(document.body, {
             childList: true,
-            subtree: true,
-            attributes: true,
-            characterData: true
+            subtree: true
         });
 
         window.addEventListener('click', function(e) {
@@ -108,8 +105,6 @@ def inject_js(window):
             e.preventDefault();
             enforceStrictControl();
         });
-
-        setInterval(enforceStrictControl, 1000);
 
         window.checkDMContent = function() {
             const dmContent = document.querySelector('div[aria-label="Direct messaging"]');
