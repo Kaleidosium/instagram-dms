@@ -35,8 +35,31 @@ def inject_js(window):
         // Run the function immediately
         applyCustomStyles();
 
-        // Set up an interval to run the function every second
-        setInterval(applyCustomStyles, 1000);
+        // Use MutationObserver to watch for DOM changes
+        const observer = new MutationObserver((mutations) => {
+            for (let mutation of mutations) {
+                if (mutation.type === 'childList' || mutation.type === 'subtree') {
+                    applyCustomStyles();
+                    break;
+                }
+            }
+        });
+
+        // Configure the observer to watch for changes in the body and its descendants
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+
+        // Listen for URL changes (for single-page app navigation)
+        let lastUrl = location.href; 
+        new MutationObserver(() => {
+            const url = location.href;
+            if (url !== lastUrl) {
+                lastUrl = url;
+                applyCustomStyles();
+            }
+        }).observe(document, {subtree: true, childList: true});
         """
     )
 
