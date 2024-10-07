@@ -1,17 +1,34 @@
 import webview
 import time
-
+import threading
 
 def inject_js(window):
     window.evaluate_js(
         r"""
+        const DM_URL = 'https://www.instagram.com/direct/inbox/';
+
+        function isAllowedUrl(url) {
+            // Allow all external links but restrict Instagram navigation to DMs
+            const isDMSection = url.startsWith('https://www.instagram.com/direct/');
+            const isInstagram = url.startsWith('https://www.instagram.com/');
+            return isDMSection || !isInstagram;  // Allow external or DM-related Instagram links
+        }
+
+        function forceRedirectToDMs() {
+            if (!isAllowedUrl(window.location.href)) {
+                window.location.href = DM_URL;
+                return true;
+            }
+            return false;
+        }
+
         function applyCustomStyles() {
             const htmlElement = document.querySelector('html');
             if (htmlElement) { 
                 htmlElement.style.msOverflowStyle = 'none';
                 htmlElement.style.scrollbarWidth = 'none';
             }
-            
+
             if (!document.getElementById('hide-scrollbar-y-style')) {
                 const style = document.createElement('style');
                 style.id = 'hide-scrollbar-y-style';
@@ -29,97 +46,103 @@ def inject_js(window):
             if (charmsbar) { charmsbar.style.display = 'none'; }
         }
 
-        function redirectToInbox() {
-            const directUrl = 'https://www.instagram.com/direct/';
-            if (!window.location.href.includes(directUrl) && window.location.href.startsWith('https://www.instagram.com/')) {
-                window.location.href = directUrl;
-                return true;
-            }
-            return false;
+        function removeNonDMElements() {
+            const navBar = document.querySelector('nav');
+            if (navBar) navBar.remove();
+
+            document.querySelectorAll('[href*="explore"], [aria-label*="explore"], [data-testid*="explore"]').forEach(el => el.remove());
+
+            document.querySelectorAll('[href*="profile"], [aria-label*="profile"], [data-testid*="profile"], [href*="search"], [aria-label*="search"], [data-testid*="search"]').forEach(el => el.remove());
         }
 
-        // Run the functions immediately
-        redirectToInbox();
-        applyCustomStyles();
+        function enforceStrictControl() {
+            if (forceRedirectToDMs()) return;
+            applyCustomStyles();
+            removeNonDMElements();
+        }
 
-        // Use MutationObserver to watch for DOM changes
+        enforceStrictControl();
+
         const observer = new MutationObserver((mutations) => {
-            for (const mutation of mutations) {
-                if (mutation.type === 'childList' || mutation.type === 'subtree') {
-                    if (redirectToInbox()) {
-                        break;
-                    }
-                    applyCustomStyles();
-                    break;
-                }
-            }
+            enforceStrictControl();
         });
 
-        // Configure the observer to watch for changes in the body and its descendants
-        if (document.body) {
-            observer.observe(document.body, {
-                childList: true,
-                subtree: true
-            });
-        } else {
-            console.error('Document body not found');
-        }
-
-        // Listen for URL changes (for single-page app navigation)
-        let lastUrl = location.href; 
-        const urlObserver = new MutationObserver(() => {
-            const url = location.href;
-            if (url !== lastUrl) {
-                lastUrl = url;
-                if (!redirectToInbox()) {
-                    applyCustomStyles();
-                }
-            }
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true,
+            attributes: true,
+            characterData: true
         });
 
-        if (document.documentElement) {
-            urlObserver.observe(document.documentElement, {childList: true, subtree: true});
-        } else {
-            console.error('Document element not found');
-        }
-
-        // Intercept link clicks
-        document.addEventListener('click', function(e) {
-            const link = e.target.closest('a');
-            if (link && link.href.startsWith('https://www.instagram.com/') && !link.href.includes('/direct/')) {
-                e.preventDefault();
-                redirectToInbox();
+        window.addEventListener('click', function(e) {
+            const anchorTag = e.target.tagName === 'A' ? e.target : e.target.closest('a');
+            if (anchorTag) {
+                const href = anchorTag.href;
+                if (!isAllowedUrl(href)) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    forceRedirectToDMs();  // Redirect Instagram URLs that are not DMs
+                } else if (!href.startsWith('https://www.instagram.com/')) {
+                    // Allow external links
+                    e.preventDefault();
+                    e.stopPropagation();
+                    window.open(href, '_blank'); // Open external links in new tab
+                }
             }
         }, true);
 
+        ['pushState', 'replaceState'].forEach(func => {
+            const original = history[func];
+            history[func] = function () {
+                const result = original.apply(this, arguments);
+                enforceStrictControl();
+                return result;
+            };
+        });
 
+        window.addEventListener('popstate', function() {
+            enforceStrictControl();
+        });
+
+        window.addEventListener('hashchange', function(e) {
+            e.preventDefault();
+            enforceStrictControl();
+        });
+
+        setInterval(enforceStrictControl, 1000);
+
+        window.checkDMContent = function() {
+            const dmContent = document.querySelector('div[aria-label="Direct messaging"]');
+            return !!dmContent;
+        };
         """
     )
 
+def is_allowed_url(url):
+    return url.startswith('https://www.instagram.com/direct/')
 
-def check_url(window):
+def check_url_and_content(window):
     try:
-        current_url = window.evaluate_js("window.location.href")
-        if (
-            current_url
-            and not current_url.startswith("https://www.instagram.com/direct/")
-            and current_url.startswith("https://www.instagram.com/")
-        ):
+        current_url = window.get_current_url()
+        if not is_allowed_url(current_url):
+            print(f"Redirecting from {current_url} to direct inbox")
             window.load_url("https://www.instagram.com/direct/inbox/")
+        else:
+            # Check if we're actually in the DM content
+            is_dm_content = window.evaluate_js('window.checkDMContent()')
+            if not is_dm_content:
+                print("DM content not detected, redirecting")
+                window.load_url("https://www.instagram.com/direct/inbox/")
     except Exception as e:
-        print(f"Error checking URL: {str(e)}")
-
+        print(f"Error checking URL and content: {str(e)}")
 
 def load_url(window):
     window.load_url("https://www.instagram.com/direct/inbox/")
+    time.sleep(5)  # Give some time for the page to load
 
-    # Give some time for the page to load before starting the URL checking loop
-    time.sleep(5)
-
-    while True:
-        check_url(window)
+    while not window.events.closing:
+        check_url_and_content(window)
         time.sleep(1)  # Check every second
-
 
 def on_loaded(window):
     inject_js(window)
@@ -136,10 +159,11 @@ if __name__ == "__main__":
 
     window.events.loaded += on_loaded
 
-    # We need to explicitly set a http port to persist cookies between sessions
+    url_thread = threading.Thread(target=load_url, args=(window,))
+    url_thread.daemon = True
+    url_thread.start()
+
     webview.start(
-        func=load_url,
-        args=window,
         private_mode=False,
         http_server=True,
         http_port=13377,
