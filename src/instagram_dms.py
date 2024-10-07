@@ -9,9 +9,6 @@ def inject_js(window):
                 return;  // Exit if not on the inbox page
             }
 
-            console.log('Applying custom styles...');
-
-
             const htmlElement = document.querySelector('html');
             if (htmlElement) { 
                 htmlElement.style.msOverflowStyle = 'none';
