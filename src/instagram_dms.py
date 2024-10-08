@@ -29,15 +29,50 @@ class InstagramDMClient:
     @staticmethod
     def _get_control_script():
         """Return the JavaScript code for controlling the Instagram interface."""
-        return """
+        return r"""
             try {
                 const DM_URL = 'https://www.instagram.com/direct/inbox/';
 
                 function isAllowedUrl(url) {
                     // Allow all external links but restrict Instagram navigation to DMs
-                    const isDMSection = url.startsWith('https://www.instagram.com/direct/');
-                    const isInstagram = url.startsWith('https://www.instagram.com/');
-                    return isDMSection || !isInstagram;  // Allow external or DM-related Instagram links
+                    const isDMSection = url.startsWith('https://www.instagram.com/direct');
+                    const isLoginPage = url.startsWith('https://www.instagram.com/accounts/login');
+                    const isChallengePage = url.startsWith('https://www.instagram.com/challenge');
+                    const isTwoFactorPage = url.startsWith('https://www.instagram.com/two_factor');
+                    const isOneTapPage = url.startsWith('https://www.instagram.com/accounts/onetap');
+                    const isInstagram = url.startsWith('https://www.instagram.com');
+                    return isDMSection || isLoginPage || isChallengePage || isTwoFactorPage || isOneTapPage || !isInstagram;  // Allow external or DM-related Instagram links
+                }
+
+                function isLoggedIn() {
+                    // Check for common DM UI elements
+                    const dmElements = document.querySelector('[role="main"] [role="grid"]');
+                    return !!dmElements;
+                }
+
+                function handleInitialSetup() {
+                    // Only run setup clicks if we're not logged in
+                    if (isLoggedIn()) {
+                        return;
+                    }
+
+                    // Handle "Save info" button on onetap page
+                    if (window.location.href.startsWith('https://www.instagram.com/accounts/onetap')) {
+                        const buttons = Array.from(document.querySelectorAll('button'));
+                        const saveInfoButton = buttons.find(button => button.textContent === 'Save info');
+                        if (saveInfoButton) {
+                            console.log('Found Save info button, clicking...');
+                            saveInfoButton.click();
+                        }
+                    }
+                    
+                    // Handle "Not Now" button on main page
+                    const buttons = Array.from(document.querySelectorAll('button'));
+                    const notNowButton = buttons.find(button => button.textContent === 'Not Now');
+                    if (notNowButton) {
+                        console.log('Found Not Now button, clicking...');
+                        notNowButton.click();
+                    }
                 }
 
                 function forceRedirectToDMs() {
@@ -86,6 +121,7 @@ class InstagramDMClient:
                 }
 
                 function enforceStrictControl() {
+                    handleInitialSetup();
                     forceRedirectToDMs();
                     applyCustomStyles();
                     removeNonDMElements();
