@@ -1,158 +1,166 @@
-import webview
-import time
+"""
+instagram_dms
+A focused WebView wrapper that restricts Instagram access to Direct Messages only.
+
+This module creates a desktop window that loads Instagram's DM interface while
+preventing navigation to other Instagram sections.
+"""
+
 import threading
+import time
+import webview
 
 
-def inject_js(window):
-    window.evaluate_js(
-        r"""
-        try {
-            const DM_URL = 'https://www.instagram.com/direct/inbox/';
+class InstagramDMClient:
+    """Manages the Instagram DM WebView client and its behavior."""
 
-            function isAllowedUrl(url) {
-                // Allow all external links but restrict Instagram navigation to DMs
-                const isDMSection = url.startsWith('https://www.instagram.com/direct/');
-                const isInstagram = url.startsWith('https://www.instagram.com/');
-                return isDMSection || !isInstagram;  // Allow external or DM-related Instagram links
-            }
+    DM_URL = "https://www.instagram.com/direct/inbox/"
+    WINDOW_WIDTH = 700
+    WINDOW_HEIGHT = 800
 
-            function forceRedirectToDMs() {
-                if (!isAllowedUrl(window.location.href)) {
-                    window.location.href = DM_URL;
+    def __init__(self):
+        """Initialize the Instagram DM client."""
+        self.window = None
+
+    def _inject_control_script(self):
+        """Inject JavaScript to control UI and navigation."""
+        self.window.evaluate_js(self._get_control_script())
+
+    @staticmethod
+    def _get_control_script():
+        """Return the JavaScript code for controlling the Instagram interface."""
+        return """
+            try {
+                const DM_URL = 'https://www.instagram.com/direct/inbox/';
+
+                function isAllowedUrl(url) {
+                    // Allow all external links but restrict Instagram navigation to DMs
+                    const isDMSection = url.startsWith('https://www.instagram.com/direct/');
+                    const isInstagram = url.startsWith('https://www.instagram.com/');
+                    return isDMSection || !isInstagram;  // Allow external or DM-related Instagram links
                 }
-            }
 
-            function applyCustomStyles() {
-                try {
-                    const htmlElement = document.querySelector('html');
-                    if (htmlElement) { 
-                        htmlElement.style.msOverflowStyle = 'none';
-                        htmlElement.style.scrollbarWidth = 'none';
+                function forceRedirectToDMs() {
+                    if (!isAllowedUrl(window.location.href)) {
+                        window.location.href = DM_URL;
                     }
+                }
 
-                    if (!document.getElementById('hide-scrollbar-y-style')) {
-                        const style = document.createElement('style');
-                        style.id = 'hide-scrollbar-y-style';
-                        style.textContent = 'html::-webkit-scrollbar { display: none !important; }';
-                        document.head.appendChild(style);
+                function applyCustomStyles() {
+                    try {
+                        const htmlElement = document.querySelector('html');
+                        if (htmlElement) { 
+                            htmlElement.style.msOverflowStyle = 'none';
+                            htmlElement.style.scrollbarWidth = 'none';
+                        }
+
+                        if (!document.getElementById('hide-scrollbar-y-style')) {
+                            const style = document.createElement('style');
+                            style.id = 'hide-scrollbar-y-style';
+                            style.textContent = 'html::-webkit-scrollbar { display: none !important; }';
+                            document.head.appendChild(style);
+                        }
+
+                        const weirdBottomMargin = document.querySelector('div.html-div > div.x9f619.x1n2onr6.x1ja2u2z > div > div > div.x78zum5.xdt5ytf.x1t2pt76.x1n2onr6.x1ja2u2z.x10cihs4 > div.x9f619.xvbhtw8.x78zum5.x168nmei.x13lgxp2.x5pf9jr.xo71vjh.x1uhb9sk.x1plvlek.xryxfnj.x1c4vz4f.x2lah0s.xdt5ytf.xqjyukv.x1qjc9v5.x1oa3qoh.x1qughib > div.x1gryazu.xh8yej3.x10o80wk.x14k21rp.x1v4esvl.x8vgawa');
+                        if (weirdBottomMargin) { weirdBottomMargin.style.margin = '0'; }
+
+                        const frameWidthAndHeight = document.querySelector('div.html-div > div.x9f619.x1n2onr6.x1ja2u2z > div > div > div.x78zum5.xdt5ytf.x1t2pt76.x1n2onr6.x1ja2u2z.x10cihs4 > div.x9f619.xvbhtw8.x78zum5.x168nmei.x13lgxp2.x5pf9jr.xo71vjh.x1uhb9sk.x1plvlek.xryxfnj.x1c4vz4f.x2lah0s.xdt5ytf.xqjyukv.x1qjc9v5.x1oa3qoh.x1qughib > div.x1gryazu.xh8yej3.x10o80wk.x14k21rp.x1v4esvl.x8vgawa > section > main > section > div > div > div');
+                        if (frameWidthAndHeight) { frameWidthAndHeight.style.height = '100%'; frameWidthAndHeight.style.width = '100%'; }
+
+                        const charmsbar = document.querySelector('div.html-div > div.x9f619.x1n2onr6.x1ja2u2z > div > div > div.x78zum5.xdt5ytf.x1t2pt76.x1n2onr6.x1ja2u2z.x10cihs4 > div.x9f619.xvbhtw8.x78zum5.x168nmei.x13lgxp2.x5pf9jr.xo71vjh.x1uhb9sk.x1plvlek.xryxfnj.x1c4vz4f.x2lah0s.xdt5ytf.xqjyukv.x1qjc9v5.x1oa3qoh.x1qughib > div.x9f619.xjbqb8w.x78zum5.x168nmei.x13lgxp2.x5pf9jr.xo71vjh.xixxii4.x1ey2m1c.x1plvlek.xryxfnj.x1c4vz4f.x2lah0s.xdt5ytf.xqjyukv.x1qjc9v5.x1oa3qoh.x1nhvcw1.xg7h5cd.xh8yej3.xhtitgo.x6w1myc.x1jeouym');
+                        if (charmsbar) { charmsbar.style.display = 'none'; }
+                    } catch (error) {
+                        console.error('Error applying custom styles:', error);
                     }
-
-                    const weirdBottomMargin = document.querySelector('div.html-div > div.x9f619.x1n2onr6.x1ja2u2z > div > div > div.x78zum5.xdt5ytf.x1t2pt76.x1n2onr6.x1ja2u2z.x10cihs4 > div.x9f619.xvbhtw8.x78zum5.x168nmei.x13lgxp2.x5pf9jr.xo71vjh.x1uhb9sk.x1plvlek.xryxfnj.x1c4vz4f.x2lah0s.xdt5ytf.xqjyukv.x1qjc9v5.x1oa3qoh.x1qughib > div.x1gryazu.xh8yej3.x10o80wk.x14k21rp.x1v4esvl.x8vgawa');
-                    if (weirdBottomMargin) { weirdBottomMargin.style.margin = '0'; }
-
-                    const frameWidthAndHeight = document.querySelector('div.html-div > div.x9f619.x1n2onr6.x1ja2u2z > div > div > div.x78zum5.xdt5ytf.x1t2pt76.x1n2onr6.x1ja2u2z.x10cihs4 > div.x9f619.xvbhtw8.x78zum5.x168nmei.x13lgxp2.x5pf9jr.xo71vjh.x1uhb9sk.x1plvlek.xryxfnj.x1c4vz4f.x2lah0s.xdt5ytf.xqjyukv.x1qjc9v5.x1oa3qoh.x1qughib > div.x1gryazu.xh8yej3.x10o80wk.x14k21rp.x1v4esvl.x8vgawa > section > main > section > div > div > div');
-                    if (frameWidthAndHeight) { frameWidthAndHeight.style.height = '100%'; frameWidthAndHeight.style.width = '100%'; }
-
-                    const charmsbar = document.querySelector('div.html-div > div.x9f619.x1n2onr6.x1ja2u2z > div > div > div.x78zum5.xdt5ytf.x1t2pt76.x1n2onr6.x1ja2u2z.x10cihs4 > div.x9f619.xvbhtw8.x78zum5.x168nmei.x13lgxp2.x5pf9jr.xo71vjh.x1uhb9sk.x1plvlek.xryxfnj.x1c4vz4f.x2lah0s.xdt5ytf.xqjyukv.x1qjc9v5.x1oa3qoh.x1qughib > div.x9f619.xjbqb8w.x78zum5.x168nmei.x13lgxp2.x5pf9jr.xo71vjh.xixxii4.x1ey2m1c.x1plvlek.xryxfnj.x1c4vz4f.x2lah0s.xdt5ytf.xqjyukv.x1qjc9v5.x1oa3qoh.x1nhvcw1.xg7h5cd.xh8yej3.xhtitgo.x6w1myc.x1jeouym');
-                    if (charmsbar) { charmsbar.style.display = 'none'; }
-                } catch (error) {
-                    console.error('Error applying custom styles:', error);
                 }
-            }
 
-            function removeNonDMElements() {
-                try {
-                    const navBar = document.querySelector('nav');
-                    if (navBar) navBar.remove();
-                    
-                    document.querySelectorAll('[href*="explore"], [aria-label*="explore"]').forEach(el => el.remove());
-                } catch (error) {
-                    console.error('Error removing elements:', error);
+                function removeNonDMElements() {
+                    try {
+                        const navBar = document.querySelector('nav');
+                        if (navBar) navBar.remove();
+                        
+                        document.querySelectorAll('[href*="explore"], [aria-label*="explore"]').forEach(el => el.remove());
+                    } catch (error) {
+                        console.error('Error removing elements:', error);
+                    }
                 }
-            }
 
-            function enforceStrictControl() {
-                forceRedirectToDMs();
-                applyCustomStyles();
-                removeNonDMElements();
-            }
+                function enforceStrictControl() {
+                    forceRedirectToDMs();
+                    applyCustomStyles();
+                    removeNonDMElements();
+                }
 
-            enforceStrictControl();
-
-            const observer = new MutationObserver(() => {
                 enforceStrictControl();
-            });
 
-            observer.observe(document.body, {
-                childList: true,
-                subtree: true,
-                attributes: true,
-                characterData: true
-            });
+                const observer = new MutationObserver(() => {
+                    enforceStrictControl();
+                });
 
-            window.addEventListener('click', function (e) {
-                const anchorTag = e.target.tagName === 'A' ? e.target : e.target.closest('a');
-                if (anchorTag) {
-                    const href = anchorTag.href;
-                    if (isAllowedUrl(href)) {
-                        // Allow external links
-                        e.preventDefault();
-                        e.stopPropagation();
-                        window.open(href, '_blank'); // Open external links in new tab
-                    } else {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        forceRedirectToDMs(); // Redirect Instagram URLs that are not DMs
+                observer.observe(document.body, {
+                    childList: true,
+                    subtree: true,
+                    attributes: true,
+                    characterData: true
+                });
+
+                window.addEventListener('click', function (e) {
+                    const anchorTag = e.target.tagName === 'A' ? e.target : e.target.closest('a');
+                    if (anchorTag) {
+                        const href = anchorTag.href;
+                        if (isAllowedUrl(href)) {
+                            // Allow external links
+                            e.preventDefault();
+                            e.stopPropagation();
+                            window.open(href, '_blank'); // Open external links in new tab
+                        } else {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            forceRedirectToDMs(); // Redirect Instagram URLs that are not DMs
+                        }
                     }
-                }
-            }, true);
+                }, true);
         } catch (error) {
             console.error('Error in main script: ', error);
         }
         """
-    )
 
+    def _monitor_url(self):
+        """Monitor and enforce URL restrictions."""
+        self.window.load_url(self.DM_URL)
+        time.sleep(5)  # Allow initial page load
 
-def is_allowed_url(url):
-    return url.startswith("https://www.instagram.com/direct/")
+        while not self.window.events.closing:
+            try:
+                current_url = self.window.get_current_url()
+                if not current_url.startswith("https://www.instagram.com/direct/"):
+                    self.window.load_url(self.DM_URL)
+            except Exception as e:
+                print(f"Error monitoring URL: {e}")
+            time.sleep(1)
 
+    def _on_loaded(self):
+        """Handle window loaded event."""
+        self._inject_control_script()
 
-def check_url_and_content(window):
-    try:
-        current_url = window.get_current_url()
-        if not is_allowed_url(current_url):
-            print(f"Redirecting from {current_url} to direct inbox")
-            window.load_url("https://www.instagram.com/direct/inbox/")
-        else:
-            # Check if we're actually in the DM content
-            is_dm_content = window.evaluate_js("window.checkDMContent()")
-            if not is_dm_content:
-                print("DM content not detected, redirecting")
-                window.load_url("https://www.instagram.com/direct/inbox/")
-    except Exception as e:
-        print(f"Error checking URL and content: {str(e)}")
+    def start(self):
+        """Start the Instagram DM client."""
+        self.window = webview.create_window(
+            title="Instagram DMs",
+            url=self.DM_URL,
+            width=self.WINDOW_WIDTH,
+            height=self.WINDOW_HEIGHT,
+            resizable=False,
+        )
 
+        self.window.events.loaded += self._on_loaded
 
-def load_url(window):
-    window.load_url("https://www.instagram.com/direct/inbox/")
-    time.sleep(5)  # Give some time for the page to load
+        url_monitor = threading.Thread(target=self._monitor_url, daemon=True)
+        url_monitor.start()
 
-    while not window.events.closing:
-        check_url_and_content(window)
-        time.sleep(1)  # Check every second
-
-
-def on_loaded(window):
-    inject_js(window)
+        webview.start(private_mode=False, http_server=True, http_port=13377)
 
 
 if __name__ == "__main__":
-    window = webview.create_window(
-        "Instagram DMs",
-        "https://www.instagram.com/direct/inbox/",
-        width=700,
-        height=800,
-        resizable=False,
-    )
-
-    window.events.loaded += on_loaded
-
-    url_thread = threading.Thread(target=load_url, args=(window,))
-    url_thread.daemon = True
-    url_thread.start()
-
-    webview.start(
-        private_mode=False,
-        http_server=True,
-        http_port=13377,
-    )
+    client = InstagramDMClient()
+    client.start()
