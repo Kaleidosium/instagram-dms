@@ -117,22 +117,10 @@ class InstagramDMClient:
                     }
                 }
 
-                function removeNonDMElements() {
-                    try {
-                        const navBar = document.querySelector('nav');
-                        if (navBar) navBar.remove();
-                        
-                        document.querySelectorAll('[href*="explore"], [aria-label*="explore"]').forEach(el => el.remove());
-                    } catch (error) {
-                        console.error('Error removing elements:', error);
-                    }
-                }
-
                 function enforceStrictControl() {
                     handleInitialSetup();
                     forceRedirectToDMs();
                     applyCustomStyles();
-                    removeNonDMElements();
                 }
 
                 enforceStrictControl();
