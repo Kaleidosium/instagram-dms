@@ -2,6 +2,7 @@ import webview
 import time
 import threading
 
+
 def inject_js(window):
     window.evaluate_js(
         r"""
@@ -101,8 +102,10 @@ def inject_js(window):
         """
     )
 
+
 def is_allowed_url(url):
-    return url.startswith('https://www.instagram.com/direct/')
+    return url.startswith("https://www.instagram.com/direct/")
+
 
 def check_url_and_content(window):
     try:
@@ -112,12 +115,13 @@ def check_url_and_content(window):
             window.load_url("https://www.instagram.com/direct/inbox/")
         else:
             # Check if we're actually in the DM content
-            is_dm_content = window.evaluate_js('window.checkDMContent()')
+            is_dm_content = window.evaluate_js("window.checkDMContent()")
             if not is_dm_content:
                 print("DM content not detected, redirecting")
                 window.load_url("https://www.instagram.com/direct/inbox/")
     except Exception as e:
         print(f"Error checking URL and content: {str(e)}")
+
 
 def load_url(window):
     window.load_url("https://www.instagram.com/direct/inbox/")
@@ -126,6 +130,7 @@ def load_url(window):
     while not window.events.closing:
         check_url_and_content(window)
         time.sleep(1)  # Check every second
+
 
 def on_loaded(window):
     inject_js(window)
