@@ -6,8 +6,6 @@ This module creates a desktop window that loads Instagram's DM interface while
 preventing navigation to other Instagram sections.
 """
 
-import threading
-import time
 import logging
 import webview
 
@@ -73,12 +71,6 @@ class InstagramDMClient:
                     }
                 }
 
-                function forceRedirectToDMs() {
-                    if (!isAllowedUrl(window.location.href)) {
-                        window.location.href = DM_URL;
-                    }
-                }
-
                 function applyCustomStyles() {
                     try {
                         const htmlElement = document.querySelector('html');
@@ -109,7 +101,6 @@ class InstagramDMClient:
 
                 function enforceStrictControl() {
                     handleInitialSetup();
-                    forceRedirectToDMs();
                     applyCustomStyles();
                 }
 
@@ -132,16 +123,9 @@ class InstagramDMClient:
                     const anchorTag = e.target.tagName === 'A' ? e.target : e.target.closest('a');
                     if (anchorTag) {
                         const href = anchorTag.href;
-                        if (isAllowedUrl(href)) {
-                            // Allow external links
-                            e.preventDefault();
-                            e.stopPropagation();
-                            window.open(href, '_blank'); // Open external links in new tab
-                        } else {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            forceRedirectToDMs(); // Redirect Instagram URLs that are not DMs
-                        }
+                        e.preventDefault();
+                        e.stopPropagation();
+                        window.open(href, '_blank'); // Open external and non-allowed links in new browser tab
                     }
                 }, true);
         } catch (error) {
@@ -149,41 +133,6 @@ class InstagramDMClient:
         }
         """
 
-    def _monitor_url(self):
-        """Monitor and enforce URL restrictions."""
-        self.window.load_url(self.DM_URL)
-        minimized = False
-        last_check_time = 0
-        check_interval_seconds = 1
-
-        def handle_minimized():
-            nonlocal minimized
-            minimized = True
-            logger.info("Window minimized, suspending activity.")
-
-        def handle_restored():
-            nonlocal minimized
-            minimized = False
-            logger.info("Window restored, resuming normal activity.")
-
-        self.window.events.minimized += handle_minimized
-        self.window.events.restored += handle_restored
-
-        while not self.window.events.closing:
-            try:
-                current_time = time.time()
-                if not minimized:
-                    if current_time - last_check_time >= check_interval_seconds:
-                        last_check_time = current_time
-                        current_url = self.window.get_current_url()
-                        if not current_url.startswith("https://www.instagram.com/direct/"):
-                            self.window.load_url(self.DM_URL)
-                
-                # Use a short sleep to reduce CPU usage
-                time.sleep(0.1)
-            except Exception as e:
-                logger.error(f"Error monitoring URL: {e}")
-                time.sleep(1)  # Wait a bit longer if an error occurs
 
     def _on_loaded(self):
         """Handle window loaded event."""
@@ -201,10 +150,7 @@ class InstagramDMClient:
 
         self.window.events.loaded += self._on_loaded
 
-        url_monitor = threading.Thread(target=self._monitor_url, daemon=True)
-        url_monitor.start()
-
-        webview.start(private_mode=True, http_server=True, http_port=13377)
+        webview.start(private_mode=False, http_server=True, http_port=13377)
 
 
 if __name__ == "__main__":
