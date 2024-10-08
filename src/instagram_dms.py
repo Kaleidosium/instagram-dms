@@ -135,7 +135,7 @@ if __name__ == "__main__":
     window = webview.create_window(
         "Instagram DMs",
         "https://www.instagram.com/direct/inbox/",
-        width=600,
+        width=700,
         height=800,
         resizable=False,
     )
