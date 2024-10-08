@@ -136,8 +136,6 @@ class InstagramDMClient:
                 observer.observe(document.body, {
                     childList: true,
                     subtree: true,
-                    attributes: true,
-                    characterData: true
                 });
 
                 window.addEventListener('click', function (e) {
