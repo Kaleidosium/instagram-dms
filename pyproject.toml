@@ -1,7 +1,7 @@
 [project]
 name = "instagram-dms"
 version = "0.2.1"
-description = "Add your description here"
+description = "Distraction-free way to view Instagram DMs on Desktop"
 authors = [
     { name = "Dania Rifki", email = "atomicnumberphi@gmail.com" }
 ]
@@ -20,9 +20,3 @@ managed = true
 dev-dependencies = [
     "pyinstaller>=6.10.0",
 ]
-
-[tool.hatch.metadata]
-allow-direct-references = true
-
-[tool.hatch.build.targets.wheel]
-packages = ["src/instagram_dms"]

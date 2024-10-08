@@ -181,7 +181,7 @@ class InstagramDMClient:
         def handle_minimized():
             nonlocal minimized
             minimized = True
-            logger.info("Window minimized, reducing activity.")
+            logger.info("Window minimized, suspending activity.")
 
         def handle_restored():
             nonlocal minimized
