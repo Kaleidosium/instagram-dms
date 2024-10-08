@@ -177,7 +177,6 @@ class InstagramDMClient:
         minimized = False
         last_check_time = 0
         check_interval_seconds = 1
-        minimized_check_interval_seconds = 10
 
         def handle_minimized():
             nonlocal minimized
@@ -195,13 +194,7 @@ class InstagramDMClient:
         while not self.window.events.closing:
             try:
                 current_time = time.time()
-                if minimized:
-                    if current_time - last_check_time >= minimized_check_interval_seconds:
-                        last_check_time = current_time
-                        # Perform a lightweight check when minimized
-                        if not self.window.get_current_url().startswith("https://www.instagram.com/direct/"):
-                            self.window.load_url(self.DM_URL)
-                else:
+                if not minimized:
                     if current_time - last_check_time >= check_interval_seconds:
                         last_check_time = current_time
                         current_url = self.window.get_current_url()
