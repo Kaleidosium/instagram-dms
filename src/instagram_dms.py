@@ -106,6 +106,22 @@ class InstagramDMClient:
                 handleInitialSetup();
                 applyCustomStyles();
 
+                // NOTE(dania): Leaving this commented out code in case if it's ever needed, but it's unlikely
+                /*
+                const observer = new MutationObserver(() => {
+                    applyCustomStyles();  // Only reapply styles on DOM mutations
+                });
+
+                observer.observe(document.body, {
+                    childList: true,
+                    subtree: true,
+                });
+
+                window.addEventListener('beforeunload', () => {
+                    observer.disconnect();  // Disconnect the observer when the window unloads
+                });
+                */
+
                 // Handle external and non-allowed links (Open them in the Browser as a new tab)
                 window.addEventListener('click', function (e) {
                     const anchorTag = e.target.tagName === 'A' ? e.target : e.target.closest('a');
