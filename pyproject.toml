@@ -1,6 +1,6 @@
 [project]
 name = "instagram-dms"
-version = "0.3.0"
+version = "0.3.1"
 description = "Distraction-free way to view Instagram DMs on Desktop"
 authors = [
     { name = "Dania Rifki", email = "atomicnumberphi@gmail.com" }

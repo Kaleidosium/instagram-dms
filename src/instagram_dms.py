@@ -50,6 +50,8 @@ class InstagramDMClient:
                     return isDMSection || isLoginPage || isChallengePage || isTwoFactorPage || isOneTapPage || !isInstagram;  // Allow external or DM-related Instagram links
                 }
 
+                // -- Initial setup functions --
+
                 function isLoggedIn() {
                     const sessionId = document.cookie.match(/sessionid=([^;]*)/);
                     const sessionKey = localStorage.getItem('ds_user_id');
@@ -57,7 +59,7 @@ class InstagramDMClient:
                 }
 
                 function handleInitialSetup() {
-                    // Only run setup clicks if we're not logged in
+                    // Only run when not logged in
                     if (isLoggedIn()) {
                         return;
                     }
@@ -71,6 +73,7 @@ class InstagramDMClient:
                     }
                 }
 
+                // One-time style application
                 function applyCustomStyles() {
                     try {
                         const htmlElement = document.querySelector('html');
@@ -99,33 +102,18 @@ class InstagramDMClient:
                     }
                 }
 
-                function enforceStrictControl() {
-                    handleInitialSetup();
-                    applyCustomStyles();
-                }
+                // Initial setup
+                handleInitialSetup();
+                applyCustomStyles();
 
-                enforceStrictControl();
-
-                const observer = new MutationObserver(() => {
-                    enforceStrictControl();
-                });
-
-                observer.observe(document.body, {
-                    childList: true,
-                    subtree: true,
-                });
-
-                window.addEventListener('beforeunload', () => {
-                    observer.disconnect(); // Ensure the observer is disconnected when the window unloads
-                });
-
+                // Handle external and non-allowed links (Open them in the Browser as a new tab)
                 window.addEventListener('click', function (e) {
                     const anchorTag = e.target.tagName === 'A' ? e.target : e.target.closest('a');
                     if (anchorTag) {
                         const href = anchorTag.href;
                         e.preventDefault();
                         e.stopPropagation();
-                        window.open(href, '_blank'); // Open external and non-allowed links in new browser tab
+                        window.open(href, '_blank');
                     }
                 }, true);
         } catch (error) {
