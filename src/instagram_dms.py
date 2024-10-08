@@ -42,7 +42,7 @@ class InstagramDMClient:
                 const DM_URL = 'https://www.instagram.com/direct/inbox/';
 
                 function isAllowedUrl(url) {
-                    // Allow all external links but restrict Instagram navigation to DMs
+                    // Allow all external links but restrict Instagram navigation to DMs and Authentication
                     const isDMSection = url.startsWith('https://www.instagram.com/direct');
                     const isLoginPage = url.startsWith('https://www.instagram.com/accounts/login');
                     const isChallengePage = url.startsWith('https://www.instagram.com/challenge');
@@ -63,18 +63,8 @@ class InstagramDMClient:
                     if (isLoggedIn()) {
                         return;
                     }
-
-                    // Handle "Save info" button on onetap page
-                    if (window.location.href.startsWith('https://www.instagram.com/accounts/onetap')) {
-                        const buttons = Array.from(document.querySelectorAll('button'));
-                        const saveInfoButton = buttons.find(button => button.textContent === 'Save info');
-                        if (saveInfoButton) {
-                            console.log('Found Save info button, clicking...');
-                            saveInfoButton.click();
-                        }
-                    }
                     
-                    // Handle "Not Now" button on main page
+                    // Handle "Not Now" on Notifications Modal
                     const buttons = Array.from(document.querySelectorAll('button'));
                     const notNowButton = buttons.find(button => button.textContent === 'Not Now');
                     if (notNowButton) {
@@ -214,7 +204,7 @@ class InstagramDMClient:
         url_monitor = threading.Thread(target=self._monitor_url, daemon=True)
         url_monitor.start()
 
-        webview.start(private_mode=False, http_server=True, http_port=13377)
+        webview.start(private_mode=True, http_server=True, http_port=13377)
 
 
 if __name__ == "__main__":
