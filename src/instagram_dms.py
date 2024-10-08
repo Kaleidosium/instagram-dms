@@ -45,9 +45,9 @@ class InstagramDMClient:
                 }
 
                 function isLoggedIn() {
-                    // Check for common DM UI elements
+                    const sessionId = document.cookie.match(/sessionid=([^;]*)/);
                     const sessionKey = localStorage.getItem('ds_user_id');
-                    return !!sessionKey;  // True if user ID is stored, indicating logged-in state.
+                    return !!sessionId && !!sessionKey;  // True only if both cookie and local storage are valid.
                 }
 
                 function handleInitialSetup() {
