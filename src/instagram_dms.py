@@ -8,7 +8,11 @@ preventing navigation to other Instagram sections.
 
 import threading
 import time
+import logging
 import webview
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 class InstagramDMClient:
@@ -24,7 +28,11 @@ class InstagramDMClient:
 
     def _inject_control_script(self):
         """Inject JavaScript to control UI and navigation."""
-        self.window.evaluate_js(self._get_control_script())
+        try:
+            self.window.evaluate_js(self._get_control_script())
+            logger.info("JavaScript injected successfully.")
+        except Exception as e:
+            logger.error(f"Error injecting control script: {e}")
 
     @staticmethod
     def _get_control_script():
@@ -138,6 +146,10 @@ class InstagramDMClient:
                     subtree: true,
                 });
 
+                window.addEventListener('beforeunload', () => {
+                    observer.disconnect(); // Ensure the observer is disconnected when the window unloads
+                });
+
                 window.addEventListener('click', function (e) {
                     const anchorTag = e.target.tagName === 'A' ? e.target : e.target.closest('a');
                     if (anchorTag) {
@@ -162,7 +174,6 @@ class InstagramDMClient:
     def _monitor_url(self):
         """Monitor and enforce URL restrictions."""
         self.window.load_url(self.DM_URL)
-        time.sleep(5)  # Allow initial page load
 
         while not self.window.events.closing:
             try:
@@ -170,8 +181,9 @@ class InstagramDMClient:
                 if not current_url.startswith("https://www.instagram.com/direct/"):
                     self.window.load_url(self.DM_URL)
             except Exception as e:
-                print(f"Error monitoring URL: {e}")
-            time.sleep(1)
+                logger.error(f"Error monitoring URL: {e}")
+            finally:
+                time.sleep(1)  # Ensure sleep occurs even in the event of an error
 
     def _on_loaded(self):
         """Handle window loaded event."""
