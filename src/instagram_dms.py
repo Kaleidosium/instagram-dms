@@ -133,7 +133,6 @@ class InstagramDMClient:
         }
         """
 
-
     def _on_loaded(self):
         """Handle window loaded event."""
         self._inject_control_script()
