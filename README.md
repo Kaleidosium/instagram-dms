@@ -1,4 +1,4 @@
-# instagram-dms
+# instagram_dms
 
 Distraction-free way to view Instagram DMs on Desktop. Requires webview.
 
