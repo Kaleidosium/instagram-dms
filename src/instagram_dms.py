@@ -44,6 +44,8 @@ class InstagramDMClient:
                     return isDMSection || isLoginPage || isChallengePage || isTwoFactorPage || isOneTapPage || !isInstagram;  // Allow external or DM-related Instagram links
                 }
 
+                // NOTE(dania): There might be a better way to do this, but for now, this will do.
+                //              Replace if something related to the Login/Login check breaks.
                 function isLoggedIn() {
                     // Check for common DM UI elements
                     const dmElements = document.querySelector('[role="main"] [role="grid"]');
