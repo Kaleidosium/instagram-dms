@@ -174,16 +174,45 @@ class InstagramDMClient:
     def _monitor_url(self):
         """Monitor and enforce URL restrictions."""
         self.window.load_url(self.DM_URL)
+        minimized = False
+        last_check_time = 0
+        check_interval_seconds = 1
+        minimized_check_interval_seconds = 10
+
+        def handle_minimized():
+            nonlocal minimized
+            minimized = True
+            logger.info("Window minimized, reducing activity.")
+
+        def handle_restored():
+            nonlocal minimized
+            minimized = False
+            logger.info("Window restored, resuming normal activity.")
+
+        self.window.events.minimized += handle_minimized
+        self.window.events.restored += handle_restored
 
         while not self.window.events.closing:
             try:
-                current_url = self.window.get_current_url()
-                if not current_url.startswith("https://www.instagram.com/direct/"):
-                    self.window.load_url(self.DM_URL)
+                current_time = time.time()
+                if minimized:
+                    if current_time - last_check_time >= minimized_check_interval_seconds:
+                        last_check_time = current_time
+                        # Perform a lightweight check when minimized
+                        if not self.window.get_current_url().startswith("https://www.instagram.com/direct/"):
+                            self.window.load_url(self.DM_URL)
+                else:
+                    if current_time - last_check_time >= check_interval_seconds:
+                        last_check_time = current_time
+                        current_url = self.window.get_current_url()
+                        if not current_url.startswith("https://www.instagram.com/direct/"):
+                            self.window.load_url(self.DM_URL)
+                
+                # Use a short sleep to reduce CPU usage
+                time.sleep(0.1)
             except Exception as e:
                 logger.error(f"Error monitoring URL: {e}")
-            finally:
-                time.sleep(1)  # Ensure sleep occurs even in the event of an error
+                time.sleep(1)  # Wait a bit longer if an error occurs
 
     def _on_loaded(self):
         """Handle window loaded event."""
